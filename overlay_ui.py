@@ -7,70 +7,125 @@ import subprocess
 
 class OverlayUI:
     def __init__(self):
+        # JANELA 1: Apenas para a Capa do Álbum (Ficará 100% Sólida)
         self.root = tk.Tk()
-        self.root.overrideredirect(True) # Remove bordas
-        self.root.attributes('-topmost', True) # Sempre por cima
+        self.root.overrideredirect(True)
+        self.root.attributes('-topmost', True)
         
-        # Cor que sera invisivel (Chroma Key perfeito)
         self.transparent_color = '#000001'
         self.root.wm_attributes('-transparentcolor', self.transparent_color)
         self.root.configure(bg=self.transparent_color)
-        self.root.attributes('-alpha', 0.0) # Começa invisível
+        self.root.attributes('-alpha', 0.0)
 
-        # Container principal 100% invisivel
-        self.main_frame = tk.Frame(self.root, bg=self.transparent_color)
-        self.main_frame.pack(side="left")
+        self.img_canvas = tk.Canvas(self.root, width=500, height=250, bg=self.transparent_color, highlightthickness=0)
+        self.img_canvas.pack(fill="both", expand=True)
 
-        # Container da imagem (Capa do Album) - visivel
-        self.image_label = tk.Label(self.main_frame, bg=self.transparent_color)
-        self.image_label.pack(side="left", padx=(0, 10))
+        # JANELA 2: Apenas para os Textos (Ficará 85% Translúcida)
+        self.text_win = tk.Toplevel(self.root)
+        self.text_win.overrideredirect(True)
+        self.text_win.attributes('-topmost', True)
+        self.text_win.wm_attributes('-transparentcolor', self.transparent_color)
+        self.text_win.configure(bg=self.transparent_color)
+        self.text_win.attributes('-alpha', 0.0)
 
-        # Container do Texto 100% invisivel
-        self.text_frame = tk.Frame(self.main_frame, bg=self.transparent_color)
-        self.text_frame.pack(side="left", fill="y", expand=True)
+        self.txt_canvas = tk.Canvas(self.text_win, width=500, height=250, bg=self.transparent_color, highlightthickness=0)
+        self.txt_canvas.pack(fill="both", expand=True)
 
-        # Textos estilizados igual Forza
-        # Titulo da Radio (Amarelo estilizado)
-        self.title_label = tk.Label(self.text_frame, text="HORIZON\nSPOTIFY", font=("Impact", 18, "italic"), fg="#eaff00", bg=self.transparent_color, justify="left")
-        self.title_label.pack(anchor="w")
+        self.box_bg = '#4f4f4f'
+        self.font_family = "Franklin Gothic Demi Cond" 
+        
+        self.image_item = None
+        self.track_box = []
+        self.artist_box = []
+        
+        self.track_text = self.txt_canvas.create_text(30, 160, text="", font=(self.font_family, 18), fill="#ffdd00", anchor="w")
+        self.artist_text = self.txt_canvas.create_text(30, 205, text="", font=(self.font_family, 16), fill="white", anchor="w")
 
-        # Nome da Musica (Amarelo)
-        self.track_label = tk.Label(self.text_frame, text="Nome da Música", font=("Segoe UI", 16, "bold"), fg="#ffea00", bg=self.transparent_color)
-        self.track_label.pack(anchor="w", pady=(5, 0))
+        self.txt_canvas.tag_raise(self.track_text)
+        self.txt_canvas.tag_raise(self.artist_text)
 
-        # Artista (Branco)
-        self.artist_label = tk.Label(self.text_frame, text="Artista", font=("Segoe UI", 14), fg="white", bg=self.transparent_color)
-        self.artist_label.pack(anchor="w")
-
-        # Posicionamento: Lado Esquerdo inferiror (Padrão Forza das imagens)
         screen_height = self.root.winfo_screenheight()
         window_width = 500
-        window_height = 180
-        x = 50 # Bem encostado na esquerda
-        y = screen_height - 300
+        window_height = 250
+        x = 50 
+        y = screen_height - 650 
+        
+        # As duas janelas ficam "grudadas" perfeitamente na mesma posicao
         self.root.geometry(f"{window_width}x{window_height}+{x}+{y}")
+        self.text_win.geometry(f"{window_width}x{window_height}+{x}+{y}")
 
         self.hide_timer = None
         self.is_running = True
         self.photo = None
 
-    def _convert_jpg_to_png(self, jpg_path, png_path):
-        # Truque sensacional para converter imagem sem precisar instalar compiladores C++ (PIL)
+    def _draw_rounded_rect(self, x1, y1, x2, y2, r, color):
+        ids = []
+        ids.append(self.txt_canvas.create_oval(x1, y1, x1+2*r, y1+2*r, outline=color, fill=color))
+        ids.append(self.txt_canvas.create_oval(x2-2*r, y1, x2, y1+2*r, outline=color, fill=color))
+        ids.append(self.txt_canvas.create_oval(x1, y2-2*r, x1+2*r, y2, outline=color, fill=color))
+        ids.append(self.txt_canvas.create_oval(x2-2*r, y2-2*r, x2, y2, outline=color, fill=color))
+        ids.append(self.txt_canvas.create_rectangle(x1+r, y1, x2-r, y2, outline=color, fill=color))
+        ids.append(self.txt_canvas.create_rectangle(x1, y1+r, x2, y2-r, outline=color, fill=color))
+        return ids
+
+    def _convert_jpg_to_rounded_png(self, jpg_path, png_path):
         ps_cmd = f'''
         Add-Type -AssemblyName System.Drawing;
-        $img = [System.Drawing.Image]::FromFile("{jpg_path}");
-        $img.Save("{png_path}", [System.Drawing.Imaging.ImageFormat]::Png);
+        $src = [System.Drawing.Image]::FromFile("{jpg_path}");
+        $bmp = New-Object System.Drawing.Bitmap(120, 120);
+        $g = [System.Drawing.Graphics]::FromImage($bmp);
+        $g.Clear([System.Drawing.Color]::Transparent);
+        $g.SmoothingMode = [System.Drawing.Drawing2D.SmoothingMode]::AntiAlias;
+        $g.InterpolationMode = [System.Drawing.Drawing2D.InterpolationMode]::HighQualityBicubic;
+        $g.PixelOffsetMode = [System.Drawing.Drawing2D.PixelOffsetMode]::HighQuality;
+        $path = New-Object System.Drawing.Drawing2D.GraphicsPath;
+        $r = 16;
+        $path.AddArc(0, 0, $r, $r, 180, 90);
+        $path.AddArc(120 - $r, 0, $r, $r, 270, 90);
+        $path.AddArc(120 - $r, 120 - $r, $r, $r, 0, 90);
+        $path.AddArc(0, 120 - $r, $r, $r, 90, 90);
+        $path.CloseFigure();
+        $g.SetClip($path);
+        $g.DrawImage($src, 0, 0, 120, 120);
+        $bmp.Save("{png_path}", [System.Drawing.Imaging.ImageFormat]::Png);
+        $g.Dispose();
+        $bmp.Dispose();
+        $src.Dispose();
         '''
         subprocess.run(["powershell", "-Command", ps_cmd], creationflags=subprocess.CREATE_NO_WINDOW)
+
+    def _truncate_text(self, text, max_length):
+        if len(text) > max_length:
+            return text[:max_length-3] + "..."
+        return text
 
     def show_track(self, track_info):
         if not track_info:
             return
             
-        self.track_label.config(text=track_info['name'])
-        self.artist_label.config(text=track_info['artist'])
+        name = self._truncate_text(track_info['name'], 30)
+        artist = self._truncate_text(track_info['artist'], 35)
+            
+        self.txt_canvas.itemconfig(self.track_text, text=name)
+        self.txt_canvas.itemconfig(self.artist_text, text=artist)
         
-        # Baixar e exibir a capa do album (em formato 64x64 retornado pelo controller)
+        for item in self.track_box + self.artist_box:
+            self.txt_canvas.delete(item)
+            
+        bbox_track = self.txt_canvas.bbox(self.track_text)
+        bbox_artist = self.txt_canvas.bbox(self.artist_text)
+        
+        padding_x = 10
+        padding_y = 6
+        self.track_box = self._draw_rounded_rect(bbox_track[0]-padding_x, bbox_track[1]-padding_y, bbox_track[2]+padding_x, bbox_track[3]+padding_y, 8, self.box_bg)
+        self.artist_box = self._draw_rounded_rect(bbox_artist[0]-padding_x, bbox_artist[1]-padding_y, bbox_artist[2]+padding_x, bbox_artist[3]+padding_y, 8, self.box_bg)
+        
+        for item in self.track_box + self.artist_box:
+            self.txt_canvas.tag_lower(item)
+            
+        if self.image_item:
+            self.img_canvas.delete(self.image_item)
+            
         if track_info.get('image_url'):
             try:
                 response = requests.get(track_info['image_url'])
@@ -80,26 +135,26 @@ class OverlayUI:
                 with open(jpg_path, 'wb') as f:
                     f.write(response.content)
                     
-                # Converter para PNG (formato nativo que o Tkinter aceita sem Pillow)
-                self._convert_jpg_to_png(os.path.abspath(jpg_path), os.path.abspath(png_path))
+                self._convert_jpg_to_rounded_png(os.path.abspath(jpg_path), os.path.abspath(png_path))
                 
                 if os.path.exists(png_path):
                     self.photo = tk.PhotoImage(file=png_path)
-                    self.image_label.config(image=self.photo)
+                    self.image_item = self.img_canvas.create_image(20, 10, anchor="nw", image=self.photo)
             except Exception as e:
                 print(f"Erro ao carregar imagem: {e}")
         
-        # Faz a janela aparecer instantaneamente (sem aquela caixa preta feia!)
-        self.root.attributes('-alpha', 1.0)
+        # O SEGREDO DO DESIGN PERFEITO ESTÁ AQUI:
+        self.root.attributes('-alpha', 1.0) # Janela da Imagem = 100% Sólida
+        self.text_win.attributes('-alpha', 0.85) # Janela do Texto = 85% Translúcida (Suave)
         
         if self.hide_timer:
             self.root.after_cancel(self.hide_timer)
             
-        # Esconder após 4 segundos
         self.hide_timer = self.root.after(4000, self.hide_window)
 
     def hide_window(self):
         self.root.attributes('-alpha', 0.0)
+        self.text_win.attributes('-alpha', 0.0)
 
     def update_loop(self):
         while self.is_running:
@@ -113,4 +168,5 @@ class OverlayUI:
 
     def stop(self):
         self.is_running = False
+        self.text_win.destroy()
         self.root.destroy()

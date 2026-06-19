@@ -38,8 +38,8 @@ class SpotifyController:
                 return {
                     "name": track['name'],
                     "artist": ", ".join([artist['name'] for artist in track['artists']]),
-                    # Pegar a menor imagem possivel (geralmente 64x64) para a capa
-                    "image_url": track['album']['images'][-1]['url'] if track['album']['images'] else None
+                    # Pegar a imagem media (geralmente 300x300) para ter qualidade ao redimensionar
+                    "image_url": track['album']['images'][1]['url'] if len(track['album']['images']) > 1 else (track['album']['images'][0]['url'] if track['album']['images'] else None)
                 }
             return None
         except Exception as e:
