@@ -59,12 +59,16 @@ def main():
 
     def update_track_if_changed():
         nonlocal last_track_id
-        track_info = spotify.get_current_track_info()
-        if track_info and track_info.get("id"):
-            current_id = track_info["id"]
-            if current_id != last_track_id:
-                last_track_id = current_id
-                overlay.show_track(track_info)
+        try:
+            track_info = spotify.get_current_track_info()
+            if track_info and track_info.get("id"):
+                current_id = track_info["id"]
+                if current_id != last_track_id:
+                    last_track_id = current_id
+                    # IMPORTANT: GUI updates must be scheduled on the main thread
+                    overlay.root.after(0, overlay.show_track, track_info)
+        except Exception as e:
+            print(f"Error checking track: {e}")
 
     def poll_spotify():
         while True:
