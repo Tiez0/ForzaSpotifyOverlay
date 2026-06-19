@@ -13,7 +13,7 @@ def load_config():
         with open("config.json", "r") as f:
             return json.load(f)
     except Exception as e:
-        print(f"Erro ao carregar config.json: {e}")
+        print(f"Error loading config.json: {e}")
         return {}
 
 def is_process_running(process_name):
@@ -23,56 +23,56 @@ def is_process_running(process_name):
     return False
 
 def main():
-    print("Iniciando Forza Spotify Overlay...")
+    print("Starting Forza Spotify Overlay...")
     config = load_config()
     
     forza_path = config.get("FORZA_EXECUTABLE_PATH", "")
     
-    # Inicia o Forza caso nao esteja rodando
+    # Start Forza if it is not already running
     if forza_path and os.path.exists(forza_path):
         forza_exe_name = os.path.basename(forza_path)
         if not is_process_running(forza_exe_name):
-            print(f"Iniciando o jogo: {forza_path}")
+            print(f"Starting the game: {forza_path}")
             try:
                 subprocess.Popen([forza_path])
             except Exception as e:
-                print(f"Erro ao iniciar o Forza: {e}")
+                print(f"Error starting Forza: {e}")
         else:
-            print("Forza ja esta em execucao.")
+            print("Forza is already running.")
     else:
-        print("Caminho do Forza nao configurado ou nao encontrado. Ignorando auto-start do jogo.")
+        print("Forza path not configured or not found. Skipping game auto-start.")
 
-    print("Conectando ao Spotify...")
+    print("Connecting to Spotify...")
     spotify = SpotifyController()
     
-    print("Inicializando Overlay UI...")
+    print("Initializing Overlay UI...")
     overlay = OverlayUI()
 
     def on_right():
-        print("D-PAD Right pressionado -> Pular Musica")
+        print("D-PAD Right pressed -> Skip Track")
         if spotify.next_track():
-            time.sleep(0.5) # Aguarda o Spotify atualizar o status
+            time.sleep(0.5) # Wait for Spotify to update the playback status
             track_info = spotify.get_current_track_info()
             overlay.show_track(track_info)
 
     def on_left():
-        print("D-PAD Left pressionado -> Voltar Musica")
+        print("D-PAD Left pressed -> Previous Track")
         if spotify.previous_track():
-            time.sleep(0.5) # Aguarda o Spotify atualizar o status
+            time.sleep(0.5) # Wait for Spotify to update the playback status
             track_info = spotify.get_current_track_info()
             overlay.show_track(track_info)
 
-    print("Inicializando Leitor de Controle Xbox...")
+    print("Initializing Xbox Gamepad Listener...")
     gamepad = GamepadListener(on_dpad_right=on_right, on_dpad_left=on_left)
     gamepad.start()
 
-    print("Overlay rodando! Pressione D-PAD Direita/Esquerda para trocar a musica.")
+    print("Overlay is running! Press D-PAD Right/Left to change tracks.")
     
     try:
-        # Tkinter precisa rodar na thread principal
+        # Tkinter must run on the main thread
         overlay.root.mainloop()
     except KeyboardInterrupt:
-        print("Encerrando...")
+        print("Shutting down...")
     finally:
         gamepad.stop()
 

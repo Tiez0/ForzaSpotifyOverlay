@@ -7,7 +7,7 @@ import subprocess
 
 class OverlayUI:
     def __init__(self):
-        # JANELA 1: Apenas para a Capa do Álbum (Ficará 100% Sólida)
+        # WINDOW 1: For the Album Cover only (Will be 100% Solid)
         self.root = tk.Tk()
         self.root.overrideredirect(True)
         self.root.attributes('-topmost', True)
@@ -20,7 +20,7 @@ class OverlayUI:
         self.img_canvas = tk.Canvas(self.root, width=500, height=250, bg=self.transparent_color, highlightthickness=0)
         self.img_canvas.pack(fill="both", expand=True)
 
-        # JANELA 2: Apenas para os Textos (Ficará 85% Translúcida)
+        # WINDOW 2: For the Text Boxes only (Will be 85% Translucent)
         self.text_win = tk.Toplevel(self.root)
         self.text_win.overrideredirect(True)
         self.text_win.attributes('-topmost', True)
@@ -50,7 +50,7 @@ class OverlayUI:
         x = 50 
         y = screen_height - 650 
         
-        # As duas janelas ficam "grudadas" perfeitamente na mesma posicao
+        # Both windows are stacked perfectly at the exact same position
         self.root.geometry(f"{window_width}x{window_height}+{x}+{y}")
         self.text_win.geometry(f"{window_width}x{window_height}+{x}+{y}")
 
@@ -141,11 +141,11 @@ class OverlayUI:
                     self.photo = tk.PhotoImage(file=png_path)
                     self.image_item = self.img_canvas.create_image(20, 10, anchor="nw", image=self.photo)
             except Exception as e:
-                print(f"Erro ao carregar imagem: {e}")
+                print(f"Error loading image: {e}")
         
-        # O SEGREDO DO DESIGN PERFEITO ESTÁ AQUI:
-        self.root.attributes('-alpha', 1.0) # Janela da Imagem = 100% Sólida
-        self.text_win.attributes('-alpha', 0.85) # Janela do Texto = 85% Translúcida (Suave)
+        # Image window is solid, text window is translucent
+        self.root.attributes('-alpha', 1.0) 
+        self.text_win.attributes('-alpha', 0.85) 
         
         if self.hide_timer:
             self.root.after_cancel(self.hide_timer)

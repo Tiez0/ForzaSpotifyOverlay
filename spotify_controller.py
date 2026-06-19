@@ -19,7 +19,7 @@ class SpotifyController:
             self.sp.next_track()
             return True
         except Exception as e:
-            print(f"Erro ao pular: {e}")
+            print(f"Error skipping track: {e}")
             return False
 
     def previous_track(self):
@@ -27,7 +27,7 @@ class SpotifyController:
             self.sp.previous_track()
             return True
         except Exception as e:
-            print(f"Erro ao voltar: {e}")
+            print(f"Error going to previous track: {e}")
             return False
 
     def get_current_track_info(self):
@@ -38,10 +38,10 @@ class SpotifyController:
                 return {
                     "name": track['name'],
                     "artist": ", ".join([artist['name'] for artist in track['artists']]),
-                    # Pegar a imagem media (geralmente 300x300) para ter qualidade ao redimensionar
+                    # Fetch medium size image (usually 300x300) for better quality when resizing
                     "image_url": track['album']['images'][1]['url'] if len(track['album']['images']) > 1 else (track['album']['images'][0]['url'] if track['album']['images'] else None)
                 }
             return None
         except Exception as e:
-            print(f"Erro ao obter musica atual: {e}")
+            print(f"Error fetching current track: {e}")
             return None
