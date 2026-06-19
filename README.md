@@ -4,6 +4,9 @@
   <p>A seamless, anti-cheat safe Spotify widget that mimics the native Forza Horizon radio UI.</p>
 </div>
 
+> [!WARNING]
+> **Beta Version (v1.0-beta):** This project is currently in its early beta stage. You may encounter minor UI bugs or unexpected behavior. Feedback and issue reports are highly appreciated!
+
 ---
 
 ## ✨ Features
