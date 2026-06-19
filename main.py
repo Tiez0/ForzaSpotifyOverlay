@@ -7,6 +7,7 @@ import psutil
 from spotify_controller import SpotifyController
 from gamepad_listener import GamepadListener
 from overlay_ui import OverlayUI
+from forza_telemetry import ForzaTelemetry
 
 def load_config():
     try:
@@ -48,7 +49,15 @@ def main():
     print("Initializing Overlay UI...")
     overlay = OverlayUI()
 
+    print("Initializing Forza Telemetry Listener...")
+    telemetry = ForzaTelemetry()
+    telemetry.start()
+
     def on_right():
+        if not telemetry.is_race_on:
+            print("D-PAD Right ignored (Menu/Map is open)")
+            return
+            
         print("D-PAD Right pressed -> Skip Track")
         if spotify.next_track():
             time.sleep(0.5) # Wait for Spotify to update the playback status
@@ -56,6 +65,10 @@ def main():
             overlay.show_track(track_info)
 
     def on_left():
+        if not telemetry.is_race_on:
+            print("D-PAD Left ignored (Menu/Map is open)")
+            return
+            
         print("D-PAD Left pressed -> Previous Track")
         if spotify.previous_track():
             time.sleep(0.5) # Wait for Spotify to update the playback status
@@ -74,6 +87,7 @@ def main():
     except KeyboardInterrupt:
         print("Shutting down...")
     finally:
+        telemetry.stop()
         gamepad.stop()
 
 if __name__ == "__main__":
