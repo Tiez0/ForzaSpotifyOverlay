@@ -24,7 +24,7 @@
 ### 1. Get your Spotify API Keys
 1. Go to the [Spotify Developer Dashboard](https://developer.spotify.com/dashboard).
 2. Click **Create an App**.
-3. Set the **Redirect URI** to `http://localhost:8080`.
+3. Set the **Redirect URI** to `http://127.0.0.1:8080`.
 4. Copy your `Client ID` and `Client Secret`.
 
 ### 2. Clone the Repository
@@ -41,14 +41,14 @@ pip install spotipy PyQt6 XInput-Python psutil requests
 ### 4. Configuration
 1. Open the `config.json` file in the project folder.
 2. Paste your `Client ID` and `Client Secret` into the respective fields.
-3. Keep the `SPOTIPY_REDIRECT_URI` as `http://localhost:8080`.
+3. Keep the `SPOTIPY_REDIRECT_URI` as `http://127.0.0.1:8080`.
 4. Optionally, add the path to your Forza executable if you want the app to auto-launch.
 
 ```json
 {
     "SPOTIPY_CLIENT_ID": "YOUR_CLIENT_ID_HERE",
     "SPOTIPY_CLIENT_SECRET": "YOUR_CLIENT_SECRET_HERE",
-    "SPOTIPY_REDIRECT_URI": "http://localhost:8080",
+    "SPOTIPY_REDIRECT_URI": "http://127.0.0.1:8080",
     "FORZA_EXECUTABLE_PATH": "C:\\XboxGames\\Forza Horizon 5\\Content\\ForzaHorizon5.exe"
 }
 ```
