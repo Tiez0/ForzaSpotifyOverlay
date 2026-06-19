@@ -1,0 +1,10 @@
+# Ignorar o ambiente virtual
+venv/
+__pycache__/
+
+# Ignorar arquivos temporarios de imagem
+temp_cover.jpg
+temp_cover.png
+
+# ESTE ARQUIVO E MUITO IMPORTANTE! Ele evita que suas senhas vazem no Github.
+config.json
