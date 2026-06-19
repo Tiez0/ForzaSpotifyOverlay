@@ -36,6 +36,7 @@ class SpotifyController:
             if current and current.get('item'):
                 track = current['item']
                 return {
+                    "id": track.get('id'),
                     "name": track['name'],
                     "artist": ", ".join([artist['name'] for artist in track['artists']]),
                     # Fetch medium size image (usually 300x300) for better quality when resizing

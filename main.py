@@ -3,6 +3,7 @@ import subprocess
 import os
 import json
 import psutil
+import threading
 
 from spotify_controller import SpotifyController
 from gamepad_listener import GamepadListener
@@ -53,6 +54,26 @@ def main():
     telemetry = ForzaTelemetry()
     telemetry.start()
 
+    # Track ID state to prevent duplicate notifications
+    last_track_id = None
+
+    def update_track_if_changed():
+        nonlocal last_track_id
+        track_info = spotify.get_current_track_info()
+        if track_info and track_info.get("id"):
+            current_id = track_info["id"]
+            if current_id != last_track_id:
+                last_track_id = current_id
+                overlay.show_track(track_info)
+
+    def poll_spotify():
+        while True:
+            update_track_if_changed()
+            time.sleep(3) # Check every 3 seconds
+
+    # Start background polling thread
+    threading.Thread(target=poll_spotify, daemon=True).start()
+
     def on_right():
         if not telemetry.is_race_on:
             print("D-PAD Right ignored (Menu/Map is open)")
@@ -61,8 +82,7 @@ def main():
         print("D-PAD Right pressed -> Skip Track")
         if spotify.next_track():
             time.sleep(0.5) # Wait for Spotify to update the playback status
-            track_info = spotify.get_current_track_info()
-            overlay.show_track(track_info)
+            update_track_if_changed()
 
     def on_left():
         if not telemetry.is_race_on:
@@ -72,8 +92,7 @@ def main():
         print("D-PAD Left pressed -> Previous Track")
         if spotify.previous_track():
             time.sleep(0.5) # Wait for Spotify to update the playback status
-            track_info = spotify.get_current_track_info()
-            overlay.show_track(track_info)
+            update_track_if_changed()
 
     print("Initializing Xbox Gamepad Listener...")
     gamepad = GamepadListener(on_dpad_right=on_right, on_dpad_left=on_left)
